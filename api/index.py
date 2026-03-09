@@ -76,3 +76,24 @@ async def health_check():
         "db_connected": db is not None,
         "mongodb_uri_set": bool(os.environ.get("MONGODB_URI")),
     }
+
+
+@app.get("/api/seed-admin")
+async def seed_admin():
+    """Create a default admin user if none exists. Call once after first deployment."""
+    from app.core.database import get_db
+    from app.core.security import hash_password
+    db = get_db()
+    existing = await db.users.find_one({"role": "admin"})
+    if existing:
+        return {"message": "Admin user already exists", "email": existing["email"]}
+    admin_user = {
+        "fullName": "Admin",
+        "email": "admin@mit.edu",
+        "password": hash_password("admin123"),
+        "role": "admin",
+        "department": "MCA",
+        "createdAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc),
+    }
+    await db.users.insert_one(admin_user)
+    return {"message": "Admin user created", "email": "admin@mit.edu", "password": "admin123"}
