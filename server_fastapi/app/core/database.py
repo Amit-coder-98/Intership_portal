@@ -1,4 +1,5 @@
 import certifi
+import ssl
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 
@@ -10,10 +11,18 @@ async def connect_db():
     global client, db
     if db is not None:
         return
+    # Build connection URI with TLS params for Vercel compatibility
+    uri = settings.MONGODB_URI
+    # Append tlsAllowInvalidCertificates if using Atlas (srv or mongodb.net)
+    if "mongodb.net" in uri or "mongodb+srv" in uri:
+        sep = "&" if "?" in uri else "?"
+        if "tls=" not in uri and "ssl=" not in uri:
+            uri += f"{sep}tls=true&tlsAllowInvalidCertificates=true"
+        elif "tlsAllowInvalidCertificates" not in uri:
+            uri += "&tlsAllowInvalidCertificates=true"
     client = AsyncIOMotorClient(
-        settings.MONGODB_URI,
-        serverSelectionTimeoutMS=5000,  # 5s timeout for serverless
-        tlsCAFile=certifi.where(),
+        uri,
+        serverSelectionTimeoutMS=5000,
     )
     # Verify connection works
     await client.admin.command("ping")
