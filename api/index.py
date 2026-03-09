@@ -70,24 +70,41 @@ app.include_router(admin.router)
 @app.get("/api/health")
 async def health_check():
     from app.core.database import db
+    from app.core.config import settings as cfg
+    # Mask the URI for security
+    uri = cfg.MONGODB_URI
+    masked = uri[:20] + "***" if len(uri) > 20 else "not set"
     return {
         "status": "ok",
         "message": "MIT VPU Internship Portal API is running on Vercel",
         "db_connected": db is not None,
         "mongodb_uri_set": bool(os.environ.get("MONGODB_URI")),
+        "mongodb_uri_preview": masked,
+        "python_version": sys.version,
     }
 
 
 @app.get("/api/seed-admin")
 async def seed_admin():
     """Create a default admin user if none exists. Call once after first deployment."""
+    from app.core.database import db as current_db
+    # Force DB connection if not connected
+    if current_db is None:
+        try:
+            await connect_db()
+        except Exception as e:
+            return JSONResponse(
+                status_code=503,
+                content={"detail": f"DB connect failed in seed: {str(e)}"}
+            )
     from app.core.database import get_db
     from app.core.security import hash_password
     db = get_db()
     existing = await db.users.find_one({"role": "admin"})
     if existing:
-        return {"message": "Admin user already exists", "email": existing["email"]}
+        return {"message": "Admin user already exists", "email": existing.get("email")}
     admin_user = {
+        "name": "Admin",
         "fullName": "Admin",
         "email": "admin@mit.edu",
         "password": hash_password("admin123"),
@@ -96,4 +113,4 @@ async def seed_admin():
         "createdAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc),
     }
     await db.users.insert_one(admin_user)
-    return {"message": "Admin user created", "email": "admin@mit.edu", "password": "admin123"}
+    return {"message": "Admin user created successfully!", "email": "admin@mit.edu", "password": "admin123"}
