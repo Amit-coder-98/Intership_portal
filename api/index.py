@@ -17,36 +17,38 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
-from app.core.database import connect_db, close_db, db as _db
+from app.core.database import connect_db, db as _db
 from app.core.config import settings
 from app.routes import auth, student, mentor, admin
 
-
-@asynccontextmanager
-async def lifespan(application: FastAPI):
-    await connect_db()
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    yield
-    await close_db()
-
+# Create upload dir (safe on /tmp for Vercel)
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title="MIT VPU Internship Portal API",
     description="Backend API for MCA Semester IV Internship Management",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 
-# Middleware to ensure DB is connected on every request (serverless cold start safety)
+# Middleware to lazily connect DB on each request (serverless cold start safety)
 @app.middleware("http")
 async def ensure_db(request: Request, call_next):
-    from app.core.database import db
-    if db is None:
-        await connect_db()
+    # Skip DB connection for health check
+    if request.url.path == "/api/health":
+        return await call_next(request)
+    try:
+        from app.core.database import db
+        if db is None:
+            await connect_db()
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": f"Database connection failed: {str(e)}"}
+        )
     return await call_next(request)
 
 
@@ -67,4 +69,10 @@ app.include_router(admin.router)
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "message": "MIT VPU Internship Portal API is running on Vercel"}
+    from app.core.database import db
+    return {
+        "status": "ok",
+        "message": "MIT VPU Internship Portal API is running on Vercel",
+        "db_connected": db is not None,
+        "mongodb_uri_set": bool(os.environ.get("MONGODB_URI")),
+    }

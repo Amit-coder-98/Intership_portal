@@ -9,7 +9,12 @@ async def connect_db():
     global client, db
     if db is not None:
         return
-    client = AsyncIOMotorClient(settings.MONGODB_URI)
+    client = AsyncIOMotorClient(
+        settings.MONGODB_URI,
+        serverSelectionTimeoutMS=5000,  # 5s timeout for serverless
+    )
+    # Verify connection works
+    await client.admin.command("ping")
     # Try to get database from connection string, fallback to explicit name
     try:
         db = client.get_default_database()
