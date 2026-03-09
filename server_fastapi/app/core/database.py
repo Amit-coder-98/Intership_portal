@@ -1,3 +1,4 @@
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 
@@ -12,6 +13,7 @@ async def connect_db():
     client = AsyncIOMotorClient(
         settings.MONGODB_URI,
         serverSelectionTimeoutMS=5000,  # 5s timeout for serverless
+        tlsCAFile=certifi.where(),
     )
     # Verify connection works
     await client.admin.command("ping")
