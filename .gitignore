@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Environment variables (NEVER push credentials)
+.env
+.env.local
+.env.production
+
+# Build output
+client/dist/
+client/.vite/
+
+# Uploads (user files)
+server_fastapi/uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Vercel
+.vercel/

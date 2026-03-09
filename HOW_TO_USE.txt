@@ -1,0 +1,269 @@
+============================================================
+  MIT VPU INTERNSHIP PORTAL — HOW TO USE (Setup & Run)
+============================================================
+
+PREREQUISITES
+-------------
+1. Python 3.10+ installed (check: python --version)
+2. Node.js 18+ & npm installed (check: node --version)
+3. MongoDB running on localhost:27017
+   - Download from: https://www.mongodb.com/try/download/community
+   - Or use MongoDB Atlas (update MONGODB_URI in .env)
+4. Git (optional, for cloning)
+
+
+============================================================
+STEP 1: Clone or Download the Project
+============================================================
+
+  git clone <repository-url>
+  cd Intership_handbook_web
+
+
+============================================================
+STEP 2: Setup Backend (FastAPI)
+============================================================
+
+  2.1  Open a terminal and navigate to the server folder:
+
+       cd server_fastapi
+
+  2.2  (Recommended) Create a virtual environment:
+
+       python -m venv venv
+       venv\Scripts\activate          (Windows)
+       source venv/bin/activate       (Mac/Linux)
+
+  2.3  Install Python dependencies:
+
+       pip install -r requirements.txt
+
+  2.4  Configure environment variables:
+
+       - Open .env file in server_fastapi/ directory
+       - Verify these values (or update as needed):
+
+         MONGODB_URI=mongodb://localhost:27017/mit_internship
+         JWT_SECRET=your_secret_key_here
+         JWT_EXPIRE_MINUTES=10080
+         UPLOAD_DIR=uploads
+         MAX_FILE_SIZE=10485760
+
+  2.5  (Optional) Seed demo users:
+
+       python seed_users.py
+
+       This creates 3 demo accounts:
+         Student: student@mitvpu.ac.in / student123
+         Mentor:  mentor@mitvpu.ac.in  / mentor123
+         Admin:   admin@mitvpu.ac.in   / admin123
+
+  2.6  Start the backend server:
+
+       python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+       You should see:
+         INFO:     Connected to MongoDB
+         INFO:     Application startup complete.
+         INFO:     Uvicorn running on http://0.0.0.0:8000
+
+  2.7  Verify backend is running:
+
+       Open browser: http://localhost:8000/docs
+       (You should see the FastAPI Swagger documentation)
+
+
+============================================================
+STEP 3: Setup Frontend (React + Vite)
+============================================================
+
+  3.1  Open a NEW terminal and navigate to the client folder:
+
+       cd client
+
+  3.2  Install Node.js dependencies:
+
+       npm install
+
+  3.3  Start the development server:
+
+       npm run dev
+
+       You should see:
+         VITE v7.x.x  ready in xxx ms
+         -> Local:   http://localhost:5173/
+
+  3.4  Open the application:
+
+       Open browser: http://localhost:5173
+
+
+============================================================
+STEP 4: Using the Application
+============================================================
+
+  A) LOGIN
+  --------
+  - Open http://localhost:5173
+  - Enter email and password
+  - You will see a loading animation, then redirect to your dashboard
+
+  B) AS A STUDENT
+  ---------------
+  1. Register at /register with name, email, PRN, password
+     - You must upload your offer letter during registration
+  2. After login, you land on /dashboard:
+     - View your profile, company info, assigned mentors
+     - See days completed, reports submitted, deadlines
+  3. Submit Weekly Reports (/weekly-reports):
+     - Click "New Report" → fill week number, dates, tasks, learnings
+     - Submit → report appears with "submitted" status
+     - After mentor reviews, score appears (X/20)
+  4. Upload Documents (/documents):
+     - 8 types: offer letter, proposal, undertaking, logbook, etc.
+     - Click Upload → select file (PDF/DOC/DOCX/PPTX/JPG/PNG, max 10MB)
+     - Wait for mentor/admin approval (pending → approved/rejected)
+  5. View Grades (/grades):
+     - See marks from 5 components (total 100)
+     - Credits calculated automatically (50+ marks = 4-8 credits)
+  6. Timeline (/timeline):
+     - View internship milestones and key dates
+  7. Downloads (/downloads):
+     - Download templates: proposal format, logbook, report guidelines, etc.
+
+  C) AS A MENTOR
+  --------------
+  1. Login with mentor credentials (created by admin)
+  2. Dashboard (/mentor):
+     - See assigned students count, total reports, rubric guides
+  3. Students (/mentor/students):
+     - View assigned students table
+     - Click student name → detailed profile, docs, reports, evaluations
+  4. Review Reports (/mentor/reviews):
+     - Click "Review" on a student → see their submitted reports
+     - Click a report → score 5 rubrics (0-4 each = max 20)
+     - Add feedback → Submit Review
+  5. Evaluate Students (/mentor/evaluations):
+     - Click "Grade" on a student
+     - Select evaluation type:
+       * Industry Final (30 marks, 5 rubrics × 6 pts)
+       * Review Meetings (10 marks)
+       * Final Report (10 marks)
+       * Presentation & Viva (10 marks)
+     - Score rubrics → Submit Evaluation
+  6. Documents (/mentor/documents):
+     - View all documents from assigned students
+     - Approve or Reject pending documents
+
+  D) AS AN ADMIN
+  ---------------
+  1. Login with admin credentials
+  2. Dashboard (/admin):
+     - Overview stats, key dates, quick summary
+  3. Student Management (/admin/students):
+     - View all students, search by name/PRN/company
+     - Click "Manage" → assign mentors, update internship status
+     - Click student name → full detail modal
+  4. Mentor Management (/admin/mentors):
+     - View all mentors
+     - Create new mentor/admin account
+     - Delete accounts (with confirmation)
+  5. Document Management (/admin/documents):
+     - View all documents across all students
+     - Approve or Reject pending documents
+  6. Assign Mentors:
+     - Go to /admin/students → Click "Manage" on a student
+     - Select Faculty Mentor and/or Company Mentor from dropdowns
+     - Mentor will then see the student in their /mentor/students list
+
+
+============================================================
+STEP 5: Build for Production
+============================================================
+
+  5.1  Build the frontend:
+
+       cd client
+       npm run build
+
+       This creates a dist/ folder with optimized static files.
+
+  5.2  Run backend in production mode:
+
+       cd server_fastapi
+       python -m uvicorn main:app --host 0.0.0.0 --port 8000
+
+       (Remove --reload flag for production)
+
+  5.3  Serve the built frontend:
+
+       Option A: Configure a reverse proxy (Nginx/Apache) to:
+         - Serve client/dist/ for static files
+         - Proxy /api/* and /uploads/* to http://localhost:8000
+
+       Option B: Use Vite preview:
+         cd client
+         npm run preview
+
+
+============================================================
+TROUBLESHOOTING
+============================================================
+
+  Problem: "MongoDB connection failed"
+  Solution: Ensure MongoDB is running on port 27017
+            Check MONGODB_URI in server_fastapi/.env
+
+  Problem: "Module not found" when starting backend
+  Solution: Make sure you're in server_fastapi/ directory
+            Use: python -m uvicorn main:app (not app.main:app)
+
+  Problem: Frontend shows blank page
+  Solution: Check browser console for errors
+            Ensure backend is running on port 8000
+            Ensure Vite proxy is configured in vite.config.js
+
+  Problem: "Network Error" or "Cannot connect to server"
+  Solution: Start the backend first, then the frontend
+            Backend must be on port 8000, frontend on port 5173
+
+  Problem: "401 Unauthorized"
+  Solution: Your token may have expired (7-day expiry)
+            Try logging out and logging back in
+
+  Problem: Mentor sees no students
+  Solution: Admin must assign the mentor to students first
+            Go to /admin/students → Manage → assign mentor
+            The mentor's ID must match companyMentor or facultyMentor field
+
+  Problem: File upload fails
+  Solution: Check file type (PDF/DOC/DOCX/PPTX/JPEG/JPG/PNG only)
+            Check file size (max 10 MB)
+            Ensure uploads/ directory exists in server_fastapi/
+
+  Problem: pip install fails with bcrypt error
+  Solution: Install Visual C++ Build Tools or use:
+            pip install bcrypt==4.0.1
+
+
+============================================================
+DEMO ACCOUNTS (after running seed_users.py)
+============================================================
+
+  Role     | Email                    | Password
+  ---------|--------------------------|----------
+  Student  | student@mitvpu.ac.in     | student123
+  Mentor   | mentor@mitvpu.ac.in      | mentor123
+  Admin    | admin@mitvpu.ac.in       | admin123
+
+
+============================================================
+PORTS REFERENCE
+============================================================
+
+  Service    | Port  | URL
+  -----------|-------|------------------------------------------
+  Frontend   | 5173  | http://localhost:5173
+  Backend    | 8000  | http://localhost:8000
+  API Docs   | 8000  | http://localhost:8000/docs
+  MongoDB    | 27017 | mongodb://localhost:27017/mit_internship
