@@ -7,6 +7,8 @@ db = None
 
 async def connect_db():
     global client, db
+    if db is not None:
+        return
     client = AsyncIOMotorClient(settings.MONGODB_URI)
     # Try to get database from connection string, fallback to explicit name
     try:
@@ -21,11 +23,16 @@ async def connect_db():
 
 
 async def close_db():
-    global client
+    global client, db
     if client:
         client.close()
+        client = None
+        db = None
         print("❌ MongoDB connection closed")
 
 
 def get_db():
+    """Get the database instance. For serverless, ensure connect_db() was called."""
+    if db is None:
+        raise RuntimeError("Database not connected. Call connect_db() first.")
     return db

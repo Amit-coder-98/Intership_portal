@@ -16,11 +16,11 @@ if server_path not in sys.path:
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.core.database import connect_db, close_db
+from app.core.database import connect_db, close_db, db as _db
 from app.core.config import settings
 from app.routes import auth, student, mentor, admin
 
@@ -40,25 +40,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow Vercel deployment domain + localhost for dev
-allowed_origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-]
 
-# Add Vercel deployment URL if set
-vercel_url = os.getenv("VERCEL_URL")
-if vercel_url:
-    allowed_origins.append(f"https://{vercel_url}")
+# Middleware to ensure DB is connected on every request (serverless cold start safety)
+@app.middleware("http")
+async def ensure_db(request: Request, call_next):
+    from app.core.database import db
+    if db is None:
+        await connect_db()
+    return await call_next(request)
 
-# Add custom domain if set
-custom_domain = os.getenv("CUSTOM_DOMAIN")
-if custom_domain:
-    allowed_origins.append(f"https://{custom_domain}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins on Vercel (same-origin requests)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
