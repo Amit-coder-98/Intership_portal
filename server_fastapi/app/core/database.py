@@ -8,7 +8,11 @@ db = None
 async def connect_db():
     global client, db
     client = AsyncIOMotorClient(settings.MONGODB_URI)
-    db = client.get_default_database()
+    # Try to get database from connection string, fallback to explicit name
+    try:
+        db = client.get_default_database()
+    except Exception:
+        db = client["mit_internship"]
     # Create indexes
     await db.users.create_index("email", unique=True)
     await db.users.create_index("prn", unique=True, sparse=True)

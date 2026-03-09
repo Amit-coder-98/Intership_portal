@@ -6,10 +6,15 @@ import sys
 import os
 
 # Add server_fastapi directory to Python path so 'app' package resolves
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'server_fastapi'))
+# On Vercel, the project root is the working directory
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+server_path = os.path.join(project_root, 'server_fastapi')
+if server_path not in sys.path:
+    sys.path.insert(0, server_path)
 
-# Set env vars from Vercel environment
-# (Vercel injects environment variables set in the dashboard)
+# Also add project root itself
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +58,7 @@ if custom_domain:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],  # Allow all origins on Vercel (same-origin requests)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
